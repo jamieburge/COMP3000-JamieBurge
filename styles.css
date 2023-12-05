@@ -1,0 +1,168 @@
+#picture{
+  width:1064px;
+  height: 776.001px;
+  flex-shrink: 0;
+  background: url("Attachments/road_plain.png"), lightgray 50% / cover no-repeat;
+  float:left;
+}
+.panel{
+ 
+  position: absolute;
+  background: #D9D9D9;
+  padding-top:10px;
+  padding-left: 30px;  
+}
+.button{
+  width: 125px; 
+  height: 46px; 
+  
+  position:absolute;
+  background: #D9D9D9;
+  border-radius: 25px;
+  font-size: 16px; 
+  font-family: Inter; 
+  font-weight: 400; 
+  word-wrap: break-word;
+  text-align:center;
+  display: table-cell;
+  vertical-align: middle;
+  line-height: 46px;
+}
+.button-slider{
+  width:285px;
+  height: 46px; 
+  position: absolute;
+  background: #D9D9D9;
+  border-radius: 25px;
+  font-size: 16px; 
+  font-family: Inter; 
+  font-weight: 400; 
+  word-wrap: break-word;
+  text-align:center;
+  display: table-cell;
+  vertical-align: middle;
+  line-height: 46px;
+}
+.label{
+  position: relative; 
+  color: black; 
+  font-size: 23px; 
+  font-family: Inter; 
+  font-weight: 400; 
+  word-wrap: break-word
+}
+.cbox{
+  width: 35px; 
+  height: 35px;
+  position: relative; 
+  background: #D9D9D9; 
+  border: 1px black solid
+}
+.cameraSetting{
+  margin-top: 100px;;
+}
+#content{
+  width: 100%; 
+  height: 100%; 
+  position: relative; 
+  background: white
+}
+#title{
+  width: 670px; 
+  height: 91px; 
+  left: 43px; 
+  top: 0px; 
+  position: absolute; 
+  color: black; 
+  font-size: 90px; 
+  font-family: Jomhuria; 
+  font-weight: 400; 
+  word-wrap: break-word
+}
+#byJamie{
+  width: 234px; 
+  height: 39px; 
+  left: 441px; 
+  top: 53px; 
+  position: absolute; 
+  color: black; 
+  font-size: 27px; 
+  font-family: Jomolhari; font-weight: 400; 
+  word-wrap: break-word
+}
+#sidePanel{
+  width: 400px; 
+  height: 593px; 
+  left: 985px; 
+  top: 110px;
+}
+#cbox_enableRadar{
+  left: 300px; 
+  top: 0px;
+}
+#cbox_enableDirection{
+  left: 300px; 
+  top: 0px;
+}
+#cbox_enableEdges{
+  left: 300px; 
+  top: 0px; 
+}
+#txt_enableRadar{
+  left: 50px; 
+  top: 0px;
+}
+#txt_enableDirection{
+  left: 50px; 
+  top: 0px;
+}
+#txt_enableEdges{
+  left: 50px; 
+  top: 0px;
+}
+#txt_cameraControls{
+  width: 229px; 
+  height: 23px; 
+  left: 25%; 
+  top: 30px; 
+  position: relative; 
+  color: black; 
+  font-size: 26px; 
+  font-family: Inter; 
+  font-weight: 700; 
+  word-wrap: break-word;
+}
+#bottomPanel{
+  width: 1347px;
+  height: 160px; 
+  left: 38px; 
+  top: 772px; 
+  color: black; 
+  font-size: 23px; 
+  font-family: Inter; 
+  font-weight: 400; 
+  word-wrap: break-word;
+  line-height: 35px;
+}
+#barControls{
+  top:715px;
+  left:71px;
+  width:776px;
+  height:46px;
+  position:absolute;
+}
+#btn_demoSetup{
+  left:0px;
+}
+#btn_agentSetup{
+right:0px;
+}
+#btn_slider{
+  left: 246px; 
+}
+#btn_liveCamera{
+  left:0;
+}
+#btn_simulation{
+  right:0;
+}

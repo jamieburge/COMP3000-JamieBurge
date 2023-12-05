@@ -1,7 +1,45 @@
-<html><head>
-  <link rel="stylesheet" href="styles.css">
-  <script type="text/javascript" src="logic.js"></script>
- </head>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Webcam View</title>
+    <script src="logic.js" defer></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
  <body>
-  
+  <div id="content" >
+    <div id="header">
+      <div id="title">Sphero AI</div>
+      <div id="byJamie">By Jamie Burge</div>  </div>
+      <div id="picture" style="width: 776px; height: 582px; left: 69px; top: 110px; position: absolute; border: 3px #9E9E9E solid">
+        <video id="webcam" width="640" height="480" autoplay></video>
+      </div>
+    
+    <div id="sidePanel" class ="panel" >
+      <div id="txt_cameraControls">Camera Controls</div>
+      <div id="option1" class="cameraSetting">
+        <div id="txt_enableEdges" class="label">Enable Edges<br/></div>
+        <div id="cbox_enableEdges" class="cbox"></div>
+      </div>
+      <div id="option2" class="cameraSetting">
+        <div id="txt_enableDirection" class="label">Enable Direction<br/></div>
+        <div id="cbox_enableDirection" class="cbox"></div>
+      </div>
+      <div id="option3" class="cameraSetting">
+        <div id="txt_enableRadar" class="label">Enable Radar</div>
+        <div id="cbox_enableRadar" class="cbox"></div>
+      </div> 
+    </div>
+    <div id="barControls">
+      <div id="btn_demoSetup" class="button"> Demo Setup</div>
+      <div id="btn_slider" class="button-slider">
+        <div id="butn_liveCamera" class="button">Live Camera</div>
+        <div id="btn_simulation" class="button">Simulation</div>
+      </div>
+      <div id="btn_agentSetup" class="button">Agent Setup</div> 
+    </div>
+    <div id="bottomPanel" class="panel">Instructions and explanations about this website, how it works and the idea behind it. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. <br/>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. </div>
+  </div>
  </body></html>
