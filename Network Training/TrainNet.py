@@ -19,8 +19,7 @@ import numpy as np
 WIDTH = 1920
 HEIGHT = 1080
 
-CAR_SIZE_X = 60    
-CAR_SIZE_Y = 60
+CAR_SIZE_X = 40
 
 BORDER_COLOR = (234, 206, 183, 255) 
 
@@ -34,16 +33,16 @@ class Car:
     def __init__(self, game_map):
         # Load Car Sprite and Rotate
         self.sprite = sprite # Convert Speeds Up A Lot
-        self.sprite = pygame.transform.scale(self.sprite, (CAR_SIZE_X, CAR_SIZE_Y))
+        self.sprite = pygame.transform.scale(self.sprite, (CAR_SIZE_X, CAR_SIZE_X))
 
         self.dead_sprite = dead_sprite # Convert Speeds Up A Lot
-        self.dead_sprite = pygame.transform.scale(self.dead_sprite, (CAR_SIZE_X, CAR_SIZE_Y))
+        self.dead_sprite = pygame.transform.scale(self.dead_sprite, (CAR_SIZE_X, CAR_SIZE_X))
 
         self.success_sprite = success_sprite # Convert Speeds Up A Lot
-        self.success_sprite = pygame.transform.scale(self.success_sprite, (CAR_SIZE_X, CAR_SIZE_Y))
+        self.success_sprite = pygame.transform.scale(self.success_sprite, (CAR_SIZE_X, CAR_SIZE_X))
 
         self.goal_sprite = goal_sprite # Convert Speeds Up A Lot
-        self.goal_sprite = pygame.transform.scale(self.goal_sprite, (CAR_SIZE_X, CAR_SIZE_Y))
+        self.goal_sprite = pygame.transform.scale(self.goal_sprite, (CAR_SIZE_X, CAR_SIZE_X))
 
         self.rotated_sprite = self.sprite 
 
@@ -65,7 +64,7 @@ class Car:
             y_range = [CAR_SIZE_X, 1080-CAR_SIZE_X]
 
             self.starting_position = [random.randint(x_range[0], x_range[1]), random.randint(y_range[0], y_range[1])]
-            self.starting_center = [int(self.starting_position[0]) + CAR_SIZE_X / 2, int(self.starting_position[1]) + CAR_SIZE_Y / 2]
+            self.starting_center = [int(self.starting_position[0]) + CAR_SIZE_X / 2, int(self.starting_position[1]) + CAR_SIZE_X / 2]
             self.angle=0
             # Calculate Four Corners
             length = 0.5 * CAR_SIZE_X
@@ -78,7 +77,7 @@ class Car:
             corners_invalid = True
             while corners_invalid:
               self.starting_position = [random.randint(x_range[0], x_range[1]), random.randint(y_range[0], y_range[1])]
-              self.starting_center = [int(self.starting_position[0]) + CAR_SIZE_X / 2, int(self.starting_position[1]) + CAR_SIZE_Y / 2]
+              self.starting_center = [int(self.starting_position[0]) + CAR_SIZE_X / 2, int(self.starting_position[1]) + CAR_SIZE_X / 2]
             
               # Calculate Four Corners
               left_top = [self.starting_center[0] + math.cos(math.radians(360 - (self.angle + 30))) * length, self.starting_center[1] + math.sin(math.radians(360 - (self.angle + 30))) * length]
@@ -129,7 +128,7 @@ class Car:
 
         self.speed_set = False # Flag For Default Speed Later on
 
-        self.center = [self.position[0] + CAR_SIZE_X / 2, self.position[1] + CAR_SIZE_Y / 2] # Calculate Center
+        self.center = [self.position[0] + CAR_SIZE_X / 2, self.position[1] + CAR_SIZE_X / 2] # Calculate Center
 
         self.radars = [] # List For Sensors / Radars
         self.drawing_radars = [] # Radars To Be Drawn
@@ -142,7 +141,7 @@ class Car:
     def draw(self, screen, alive):
         if(alive ==True):
             screen.blit(self.rotated_sprite, self.position) # Draw Sprite
-            self.draw_radar(screen) #OPTIONAL FOR SENSORS
+            #self.draw_radar(screen) #OPTIONAL FOR SENSORS
             screen.blit(self.goal_sprite, self.end_goal)
             #pygame.draw.rect()
         else:
@@ -247,7 +246,7 @@ class Car:
         self.position[1] += math.sin(math.radians(360 - self.angle)) * self.speed
 
         # Calculate New Center
-        self.center = [int(self.position[0]) + CAR_SIZE_X / 2, int(self.position[1]) + CAR_SIZE_Y / 2]
+        self.center = [int(self.position[0]) + CAR_SIZE_X / 2, int(self.position[1]) + CAR_SIZE_X / 2]
 
         # Calculate Four Corners
         # Length Is Half The Side
@@ -297,7 +296,7 @@ class Car:
         # FACING
         return_values.append(self.angle)
         # Current speed
-        #return_values.append(self.speed)
+        return_values.append(self.speed)
 
             
         
@@ -312,7 +311,6 @@ class Car:
     def get_reward(self):
         
         displacement = math.sqrt((self.position[0] - self.starting_position[0])**2 + (self.position[1] - self.starting_position[1])**2)
-        # Calculate reward based on distance remaining
         remaining_distance = math.sqrt((self.position[0] - self.end_goal[0])**2 + (self.position[1] - self.end_goal[1])**2)
         
         self.prev_remaining_distance = remaining_distance
@@ -386,7 +384,7 @@ def run_simulation(genomes, config):
         # For Each Car Get The Acton It Takes
         for i, car in enumerate(cars):
             if random.random() < 0.2:
-                choice = random.randint(0, 1)  # Choose a random action
+                choice = random.randint(0, 3)  # Choose a random action
             else:
                 output = nets[i].activate(car.get_data())
                 choice = output.index(max(output))
@@ -402,10 +400,10 @@ def run_simulation(genomes, config):
                 else:
                     car.angle -= 15 # Right
             elif choice == 2:
-                if car.speed > 4:
-                    car.speed -= 2 # Slow Down
+            #    if car.speed > 4:
+                car.speed = 5 #Go
             else:
-                car.speed += 2 # Speed Up
+                car.speed = 0 # Stop
         
         # Check If Car Is Still Alive
         # Increase Fitness If Yes And Break Loop If Not
@@ -423,7 +421,7 @@ def run_simulation(genomes, config):
             break
 
         counter += 1
-        if counter == 700: 
+        if counter == 1000: 
             break
 
         # Draw Map And All Cars That Are Alive
@@ -446,7 +444,6 @@ def run_simulation(genomes, config):
         screen.blit(info_surface, (10, WINDOW_SIZE[1] - 110))  # Position the info surface at the bottom left corner
 
         pygame.display.flip()
-        clock.tick(120)  # 60 FPS
     
     generations_best_fitness=0    
     for genome_id, genome in genomes:
@@ -641,12 +638,13 @@ if __name__ == "__main__":
     global map
     global spawn_style
     #random grouped
-    spawn_style = "random"
+    spawn_style = "group"
     #detect overlay simulation
-    map = "detect"
-    generations = 500
+    map = "simulation"
+    generations = 10
     #run_training(generations)
     #demo_test_genome("./genome_1.pickle",generations)
-    test_genome("./genome_1.pickle")
-    #demo_test_genome("./best_genome_1.pickle",generations)
+    demo_test_genome("./decent_genome.pickle",generations)
+    #test_genome("./genome_1.pickle")
+    #demo_test_genome("./best_genome_3.pickle",generations)
     #test_genome("./best_genome_1.pickle")
