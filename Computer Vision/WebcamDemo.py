@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import concurrent.futures
 
 class Sphere:
     def __init__(self, color):
@@ -50,14 +49,15 @@ class Sphere:
             
             prev_frame_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-           
+            cv2.imshow("Frame",frame_gray)
+            cv2.imshow("Mask",sphere_mask)
             
             prev_frame_gray = cv2.bitwise_and(prev_frame_gray, sphere_mask)
             frame_gray = cv2.bitwise_and(frame_gray, sphere_mask)
-            cv2.imshow("Test1", prev_frame_gray)
-            cv2.imshow("Test2", frame_gray)
+            
+            cv2.imshow("Frame2", frame_gray)
     # Calculate optical flow using Lucas-Kanade method
-            optical_flow = cv2.calcOpticalFlowFarneback(
+            optical_flow = cv2.calcOpticalFlowPyrLK(
             prev_frame_gray, frame_gray, None,
             pyr_scale=0.5, levels=3, winsize=15,
             iterations=3, poly_n=5, poly_sigma=1.1, flags=0
@@ -71,6 +71,7 @@ class Sphere:
 
         # Update the direction based on the average optical flow
             self.direction = norm_optical_flow
+            print(f"Direction{self.direction}")
 
 
 def euclidean_distance(center1, center2):
@@ -106,13 +107,18 @@ def process_frame(frame):
 
     # Threshold the HSV images to get masks
     masks = {color: cv2.inRange(hsv, lower, upper) for color, (lower, upper) in color_ranges.items()}
-    
+    cv2.imshow('Pink',masks['pink'])
+    cv2.imshow('Green',masks['green'])
+    cv2.imshow('Blue',masks['blue'])
+    cv2.imshow('White',masks['white'])
     # Combine the masks
     final_mask = cv2.bitwise_or(masks['blue'] | masks['white'], masks['pink'] | masks['white'] | masks['green'])
 
     # Apply GaussianBlur to the final mask to reduce noise
     blurred_mask = cv2.GaussianBlur(final_mask, (3, 3), 0)
-
+    cv2.imshow("Blur", blurred_mask)
+    
+    
     return blurred_mask, masks  # Returning masks for further use
 
 def detect_circles(frame, mask, masks):
@@ -120,10 +126,10 @@ def detect_circles(frame, mask, masks):
     circles = cv2.HoughCircles(
         mask,
         cv2.HOUGH_GRADIENT,
-        dp=1,
+        dp=5,
         minDist=20,
-        param1=50,
-        param2=20,
+        param1=40,
+        param2=10,
         minRadius=0,
         maxRadius=50,
     )
@@ -191,7 +197,7 @@ def detect_circles(frame, mask, masks):
                 # Print the center coordinates
                 #print("Center coordinates:", center, "green with: ", (green_pixel_count / total_pixel_count *100))
         
-    return frame, detected_circles, masks
+    return frame, detected_circles
 
 def updateSpheres(spheres, allCircles, frame, prev_frame, masks):
     for sphere in spheres:
@@ -218,7 +224,7 @@ def updateSpheres(spheres, allCircles, frame, prev_frame, masks):
             case "green":
                 sphere.update_center(allCircles[2])
                 sphere.update_direction(frame, prev_frame, masks['green'])
-                draw_arrow(frame, sphere, (0, 255, 0))  
+                draw_arrow(frame, sphere, (0, 0, 255))  
                 # Draw the circle outline on the original frame
                 cv2.circle(frame, sphere.center, sphere.radius, (0, 255, 0), 2)
                 # Draw the center of the circle on the original frame
@@ -235,12 +241,7 @@ def draw_arrow(frame, sphere,color):
         endpoint = (int(sphere.center[0] + sphere.direction[0] * arrow_length), int(sphere.center[1] + sphere.direction[1] * arrow_length))
 
     # Draw the arrow on the frame
-        cv2.arrowedLine(frame, sphere.center, endpoint, color, 2) 
-        
-def process_frame_and_detect_circles(frame):
-    processed_mask, masks = process_frame(frame)
-    return detect_circles(frame, processed_mask, masks)
-               
+        cv2.arrowedLine(frame, sphere.center, endpoint, color, 2)        
 def main():
     external_webcam_index = 1
     cap = capture_video(external_webcam_index)
@@ -250,26 +251,39 @@ def main():
     greenSphero = Sphere("green")
     spheres = [blueSphero, pinkSphero,greenSphero]
     prev_frame = None
-    
-    frame_buffer = []
+    frame_skip = 5  # Adjust the skip factor as needed
+    frame_count = 0
     while True:
         ret, frame = cap.read()
 
         if not ret:
             print("Failed to capture frame")
             break
+        
+        # Append the current frame to the buffer
+        #frame_buffer.append(frame.copy())
 
-        prev_frame = frame_buffer[-1] if frame_buffer else None
+# Limit the buffer size to 3 frames (adjust as needed)
+        #frame_buffer = frame_buffer[-2:]
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(process_frame_and_detect_circles, frame)
-            result_frame, allCircles, masks = future.result()
+# Use the last frame in the buffer as the current frame
+        #current_frame = frame_buffer[-1]
 
+# Use the second-to-last frame in the buffer as the previous frame
+        
+
+        frame_count += 1
+        if frame_count % frame_skip != 0:
+            # Skip frames
+            continue
+        frame = cv2.resize(frame, None, fx=0.2, fy=0.2)
+        #prev_frame = frame_buffer[-2] if len(frame_buffer) >= 2 else None
+        processed_mask, masks = process_frame(frame)
+        result_frame,allCircles = detect_circles(frame, processed_mask, masks)
         updateSpheres(spheres, allCircles, frame, prev_frame, masks)
-
-        frame_buffer = [frame]  # Update the frame buffer with the current frame
-
+        prev_frame = frame
         cv2.imshow('Result', result_frame)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
