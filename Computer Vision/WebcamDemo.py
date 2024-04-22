@@ -47,7 +47,6 @@ class Sphero:
             print("No circles")
             pass
         elif len(all_circles) == 1:
-            print("1)")
             self.center = all_circles[0][0]
             self.radius = all_circles[0][1]
         else:  # Multiple circles are detected, we must find the most accurate circle
@@ -56,36 +55,34 @@ class Sphero:
             current_circle_radius = self.radius  # Copy the current radius to the new instance for comparison
 
                 # Check if the radius is available for the new circle
-            #if current_circle_radius is not None:
-            print("Yes")
+           
                 # Iterate over all circles and find the most similar one
             min_similarity_score = float('inf')
-            most_similar_circle = None
-
+            most_similar_circle_center = None
             for circle_info in all_circles:
                 new_circle_center, new_circle_radius = circle_info
 
                     # Check if the radius is available for the existing circle
                 if new_circle_radius is not None:
                     similarity_score = similarity_measure(current_circle_center, current_circle_radius, new_circle_center, new_circle_radius)
-
+                    
                     if similarity_score < min_similarity_score:
                         min_similarity_score = similarity_score
                         most_similar_circle_center = new_circle_center
                         most_similar_circle_radius = new_circle_radius
 
                 # Update the current Sphere with the most similar circle's properties
-            if most_similar_circle is not None and min_similarity_score <100:
+            if most_similar_circle_center is not None and min_similarity_score <50000:
                 self.center = most_similar_circle_center
                 self.radius = most_similar_circle_radius
-                print(f"{self.colour} ball has been updated to have a center of {self.center} and a radius of {self.radius} which had a similarity score of {min_similarity_score}")
+                print(f"Replacing because the most similar had a score of {min_similarity_score}")
 
 def euclidean_distance(center1, center2):
     return np.linalg.norm(np.array(center1) - np.array(center2))
 def similarity_measure(current_circle_center, current_circle_radius, new_circle_center, new_circle_radius):
     # Adjust the weight as needed based on the importance of each property
-    weight_radius = 0.4
-    weight_distance = 0.6
+    weight_radius = 0.6
+    weight_distance = 0.4
     if current_circle_center is None:
         current_circle_center = new_circle_center
         current_circle_radius = new_circle_radius
@@ -127,7 +124,7 @@ def detect_circles(frame):
         dp=1,
         minDist=20,
         param1=50,
-        param2=20,
+        param2=15,
         minRadius=0,
         maxRadius=50,
     )
@@ -143,6 +140,7 @@ def detect_circles(frame):
             
             
             roi_blue_mask = masks['blue'][i[1] - radius : i[1] + radius, i[0] - radius : i[0] + radius]
+            cv2.imshow("Blue", masks["blue"])
             # Calculate the total pixel count within the circular region
             total_pixel_count = roi_blue_mask.size
             # Calculate the blue pixel count within the circular region
@@ -224,11 +222,11 @@ def decide_action(sphero):
             # Update player position based on keys
             if keys[pygame.K_w]:
                 player_y -= player_speed
-                api.set_main_led(Color(r=0, g=255, b=0))
+                #api.set_main_led(Color(r=0, g=255, b=0))
                 api.set_speed(10)
             if keys[pygame.K_s]:
                 player_y += player_speed
-                api.set_main_led(Color(r=255, g=0, b=0))
+                #api.set_main_led(Color(r=255, g=0, b=0))
                 api.set_speed(0)
             if keys[pygame.K_a]:
                 player_x -= player_speed
@@ -288,8 +286,8 @@ filename = "./best_genome_1.pickle"
 genome= load_genome(filename)
 sphero = Sphero()
 # Create and start threads
-data_thread = threading.Thread(target=update_data(sphero))
-logic_thread = threading.Thread(target=decide_action(sphero))
+data_thread = threading.Thread(target=update_data, args=(sphero,))
+logic_thread = threading.Thread(target=decide_action, args=(sphero,))
 
 data_thread.start()
 logic_thread.start()
