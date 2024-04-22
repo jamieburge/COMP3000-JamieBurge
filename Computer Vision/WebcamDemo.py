@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import concurrent.futures
 
 class Sphere:
     def __init__(self, color):
@@ -13,18 +14,8 @@ class Sphere:
         if len(all_circles) == 0:
             pass
         elif len(all_circles) == 1:
-            if self.radius is not None:
-                existing_circle = Sphere(self.color)
-                print(all_circles)
-                existing_circle.center, existing_circle.radius = all_circles[0]
-                if similarity_measure(existing_circle, self)<10000:
-                
-                    self.center = all_circles[0][0]
-                    self.radius = all_circles[0][1]
-                    print(f"Updating {self.color} because because only one circle was found")
-            else:
-                self.center = all_circles[0][0]
-                self.radius = all_circles[0][1]
+            self.center = all_circles[0][0]
+            self.radius = all_circles[0][1]
         else:  # Multiple circles are detected, we must find the most accurate circle
             new_circle = Sphere(self.color)  # Create a new Sphere instance for comparison
             new_circle.center = self.center  # Copy the current center to the new instance for comparison
@@ -49,13 +40,37 @@ class Sphere:
                             most_similar_circle = existing_circle
 
                 # Update the current Sphere with the most similar circle's properties
-                if most_similar_circle is not None and min_similarity_score <10000:
+                if most_similar_circle is not None and min_similarity_score <100:
                     self.center = most_similar_circle.center
                     self.radius = most_similar_circle.radius
                     print(f"{self.color} ball has been updated to have a center of {self.center} and a radius of {self.radius} which had a similarity score of {min_similarity_score}")
 
-    def update_direction(self, new_direction):
-        self.direction = new_direction
+    def update_direction(self, frame, prev_frame, sphere_mask):
+        if prev_frame is not None:
+            
+            prev_frame_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+           
+            
+            prev_frame_gray = cv2.bitwise_and(prev_frame_gray, sphere_mask)
+            frame_gray = cv2.bitwise_and(frame_gray, sphere_mask)
+            cv2.imshow("Test1", prev_frame_gray)
+            cv2.imshow("Test2", frame_gray)
+    # Calculate optical flow using Lucas-Kanade method
+            optical_flow = cv2.calcOpticalFlowFarneback(
+            prev_frame_gray, frame_gray, None,
+            pyr_scale=0.5, levels=3, winsize=15,
+            iterations=3, poly_n=5, poly_sigma=1.1, flags=0
+            )
+
+        # Calculate the average optical flow vector
+            avg_optical_flow = np.mean(optical_flow, axis=(0, 1))
+
+        # Normalize the optical flow vector
+            norm_optical_flow = avg_optical_flow / np.linalg.norm(avg_optical_flow)
+
+        # Update the direction based on the average optical flow
+            self.direction = norm_optical_flow
 
 
 def euclidean_distance(center1, center2):
@@ -83,7 +98,7 @@ def process_frame(frame):
 
     # Define color ranges
     color_ranges = {
-        'blue': ((80, 50, 50), (130, 255, 255)),
+        'blue': ((90, 50, 50), (120, 255, 255)),  # Adjusted green channel values
         'green': ((50, 50, 50), (80, 255, 255)),
         'pink': ((130, 50, 50), (200, 255, 255)),
         'white': ((0, 0, 200), (180, 30, 255)),
@@ -91,10 +106,7 @@ def process_frame(frame):
 
     # Threshold the HSV images to get masks
     masks = {color: cv2.inRange(hsv, lower, upper) for color, (lower, upper) in color_ranges.items()}
-    cv2.imshow('Pink',masks['pink'])
-    cv2.imshow('Green',masks['green'])
-    cv2.imshow('Blue',masks['blue'])
-    cv2.imshow('White',masks['white'])
+    
     # Combine the masks
     final_mask = cv2.bitwise_or(masks['blue'] | masks['white'], masks['pink'] | masks['white'] | masks['green'])
 
@@ -179,24 +191,25 @@ def detect_circles(frame, mask, masks):
                 # Print the center coordinates
                 #print("Center coordinates:", center, "green with: ", (green_pixel_count / total_pixel_count *100))
         
-    return frame, detected_circles
-def updateSpheres(spheres, allCircles, frame):
-    print(f"There are {len(allCircles)} circles")
-    print(f"There are {len(allCircles[0])} blue circles")
-    print(f"There are {len(allCircles[1])} pink circles")
-    print(f"There are {len(allCircles[2])} green circles")
+    return frame, detected_circles, masks
+
+def updateSpheres(spheres, allCircles, frame, prev_frame, masks):
     for sphere in spheres:
         match sphere.color:
             case "blue":
                 sphere.update_center(allCircles[0])
-                sphere.update_direction(allCircles[0])
+                sphere.update_direction(frame, prev_frame, masks['blue'])
+
+                draw_arrow(frame, sphere, (255, 0, 0))  
                 # Draw the circle outline on the original frame
                 cv2.circle(frame, sphere.center, sphere.radius, (255, 0, 0), 2)
                 # Draw the center of the circle on the original frame
                 cv2.circle(frame, sphere.center, 2, (255, 0, 0), 3)
             case "pink":
                 sphere.update_center(allCircles[1])
-                sphere.update_direction(allCircles[1])
+                sphere.update_direction(frame, prev_frame, masks['pink'])
+                
+                draw_arrow(frame, sphere, (255, 110, 200))  
                 # Draw the circle outline on the original frame
                 cv2.circle(frame, sphere.center, sphere.radius, (255, 110, 200), 2)
 
@@ -204,21 +217,41 @@ def updateSpheres(spheres, allCircles, frame):
                 cv2.circle(frame, sphere.center, 2, (0, 0, 255), 3)
             case "green":
                 sphere.update_center(allCircles[2])
-                sphere.update_direction(allCircles[2])
+                sphere.update_direction(frame, prev_frame, masks['green'])
+                draw_arrow(frame, sphere, (0, 255, 0))  
                 # Draw the circle outline on the original frame
                 cv2.circle(frame, sphere.center, sphere.radius, (0, 255, 0), 2)
                 # Draw the center of the circle on the original frame
                 cv2.circle(frame, sphere.center, 2, (0, 0, 255), 3)
         print(f"{sphere.color} ball updated")
+def draw_arrow(frame, sphere,color):
+    arrow_length = 30  # You can adjust the arrow length as needed
+    print("Gets here")
+    if sphere.direction is not None and sphere.center is not None:
+        print("Gets there")
+        print(sphere.center)
+        print(sphere.direction[0])
+    # Calculate the endpoint of the arrow
+        endpoint = (int(sphere.center[0] + sphere.direction[0] * arrow_length), int(sphere.center[1] + sphere.direction[1] * arrow_length))
+
+    # Draw the arrow on the frame
+        cv2.arrowedLine(frame, sphere.center, endpoint, color, 2) 
         
+def process_frame_and_detect_circles(frame):
+    processed_mask, masks = process_frame(frame)
+    return detect_circles(frame, processed_mask, masks)
+               
 def main():
-    external_webcam_index = 0
+    external_webcam_index = 1
     cap = capture_video(external_webcam_index)
 
     blueSphero = Sphere("blue")
     pinkSphero = Sphere("pink")
     greenSphero = Sphere("green")
     spheres = [blueSphero, pinkSphero,greenSphero]
+    prev_frame = None
+    
+    frame_buffer = []
     while True:
         ret, frame = cap.read()
 
@@ -226,11 +259,17 @@ def main():
             print("Failed to capture frame")
             break
 
-        processed_mask, masks = process_frame(frame)
-        result_frame,allCircles = detect_circles(frame, processed_mask, masks)
-        updateSpheres(spheres, allCircles, frame)
-        cv2.imshow('Result', result_frame)
+        prev_frame = frame_buffer[-1] if frame_buffer else None
 
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(process_frame_and_detect_circles, frame)
+            result_frame, allCircles, masks = future.result()
+
+        updateSpheres(spheres, allCircles, frame, prev_frame, masks)
+
+        frame_buffer = [frame]  # Update the frame buffer with the current frame
+
+        cv2.imshow('Result', result_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
